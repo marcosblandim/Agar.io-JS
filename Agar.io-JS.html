@@ -1,0 +1,198 @@
+<!-- Small Agar.io-like game for JS study purposes. -->
+
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+	<meta charset="UTF-8">
+
+	<title>Agar.io</title>
+
+	<style>
+        #circle {
+			border-radius: 500px;
+			background: black;
+			position: absolute;	
+		}
+        #fruit {
+			width: 20px;
+			height: 20px;
+			border-radius: 500px;
+			background: red;
+			position: absolute;	
+            z-index: 2;
+		}
+        #btn {
+            position: absolute;
+            z-index: 1;
+        }
+        #points {
+            position: absolute;
+            z-index: 1;
+            color: brown;
+        }
+
+        #start-btn{
+            margin-top: 20%;
+            margin-left: 50%;
+            position: absolute;
+            z-index: 1;
+        }
+    </style>
+
+</head>
+
+<body>
+<!-- 
+    - mudar a cor faz o circulo crescer; por que?
+ -->
+    <button onclick = "handlePause()" id="btn">PAUSE</button>
+    <button onclick = "changeColor()" id="btn" style="margin-top: 25px" >color</button>
+    <p id="points" style="margin-top: 50px">POINTS: </p>
+    <button onclick = "restartGame()" id="btn" style="margin-top: 75px" >restart</button>
+    <!-- <button  id="start-btn" >START</button> -->
+
+
+	<div id="main">
+        <div id="circle"></div>
+        <div id="fruit"></div>
+	</div>
+	<script>
+
+        // variables.
+        initial_position = 10;
+        circle_radius = 70;
+        velocity = 5;
+        time_range = 1;
+        mouse_coords = {
+            x: 60,
+            y: 60
+        };
+        pause = false;
+        colors = "black blue yellow green purple white".split(' ');
+        color_index = 0;
+        dash = 5;
+        unit = 'px';
+        fruit_coords = getFruitCoords();
+        px = "6.25%";
+        percent = "0.16px";
+        points = 0;
+        fruit_points = 15;
+        end = false;
+        
+        function updatePoints(){
+            document.getElementById("points").innerHTML = "POINTS: " + points;
+        }
+        updatePoints();
+
+        // initialize circle.
+        circle = document.getElementById("circle");
+        circle.style.marginLeft = circle.style.marginTop = initial_position+unit;
+        updateCircleSize();
+
+        function updateCircleSize(){
+            circle.style.width = circle.style.height = circle_radius+'px';
+        }
+
+        function restartGame(){
+            window.location.reload(false);
+        }
+
+        // initialize fruit.
+        fruit = document.getElementById("fruit");
+        reallocFruit()
+
+        function checkVictory(){
+            if (circle_radius >= window.innerHeight){
+                alert("You won!")
+                end = true;
+                pause=true;
+            }
+        }
+
+        function getFruitCoords(){
+            return [Math.random()*window.innerWidth+unit,Math.random()*window.innerHeight+unit]
+        }
+        function reallocFruit(){
+            [fruit.style.marginLeft,fruit.style.marginTop] = getFruitCoords();
+        }
+
+        function getColor(){
+            index = (++color_index%colors.length);
+            return colors[index];
+        }
+
+        function fruitEaten(){
+            cx = parseInt(circle.style.marginLeft.split(unit)[0]) + circle_radius*0.4;
+            cy = parseInt(circle.style.marginTop.split(unit)[0]) + circle_radius*0.4;
+            fx = parseInt(fruit.style.marginLeft.split(unit)[0]);
+            fy = parseInt(fruit.style.marginTop.split(unit)[0]);
+            r = (circle_radius+20)/2;;
+            return (Math.abs(cx-fx) <= r) && (Math.abs(cy-fy) <= r);
+        }
+
+        // track mouse position.
+        document.onmousemove = (e) => {
+            mouse_coords = {x: e.x, y: e.y};
+        }
+
+        // dash.
+        document.onmousedown = (e) => {
+            velocity += dash;
+        }
+        document.onmouseup = (e) => {
+            velocity -= dash;
+        }
+
+        // pause.
+        handlePause = () => {if(!end){pause = !pause}}
+
+        // change color.
+        function changeColor(){
+            circle.style.backgroundColor = getColor()
+            if(circle.style.backgroundColor == "white"){circle.style.border="5px solid black"}
+            else{circle.style.border="5px solid "+circle.style.backgroundColor}
+        }
+
+        // move circle.
+        function handleMovement(){
+            // console.log(fruitEaten())
+            
+            if (!pause){
+               // get int variables
+                x0 = parseInt(circle.style.marginLeft.split(unit)[0])
+                y0 = parseInt(circle.style.marginTop.split(unit)[0])
+                x = mouse_coords.x - circle_radius/2 
+                y = mouse_coords.y - circle_radius/2
+
+                x_sign = x>x0 ? 1:-1
+                y_sign = y>y0 ? 1:-1
+                d_x = Math.abs(x-x0)
+                d_y = Math.abs(y-y0)
+                
+                // get components.
+                xv = (!(x-x0) || d_x<=velocity) ? 0 : d_x/(d_x+d_y)
+                yv = (!(y-y0) || d_y<=velocity) ? 0 : d_y/(d_x+d_y)
+
+                // move circle
+                circle.style.marginLeft = parseInt(circle.style.marginLeft.split('px')[0]) + x_sign*velocity*xv + 'px'
+                circle.style.marginTop = parseInt(circle.style.marginTop.split('px')[0]) + y_sign*velocity*yv + 'px'
+                
+                if(fruitEaten()){
+                    points+=fruit_points;
+                    reallocFruit();
+                    if(fruitEaten()){reallocFruit()}
+                    circle_radius+=fruit_points;
+                    updateCircleSize();
+                    updatePoints();
+                    checkVictory();
+                }
+            }
+            setTimeout(handleMovement,time_range)
+        }
+        handleMovement()
+	</script>
+</body>
+</html>
